@@ -1,6 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .email_fetcher import fetch_emails  # Ensure this function is implemented
+from .email_fetcher import fetch_emails  # Мы предположим, что эта функция реализована
 
 
 class EmailConsumer(AsyncWebsocketConsumer):
@@ -12,7 +12,6 @@ class EmailConsumer(AsyncWebsocketConsumer):
         }))
 
     async def disconnect(self, close_code):
-        # Clean up any running tasks if necessary
         pass
 
     async def start_fetching(self, event):
@@ -20,8 +19,30 @@ class EmailConsumer(AsyncWebsocketConsumer):
             'status': 'Fetching Started',
         }))
 
+        # Здесь мы вызываем функцию fetch_emails, которая будет отправлять обновления прогресса
+        reading_messages = True
+
         async for message in fetch_emails():
-            await self.send(text_data=json.dumps(message))
+            if reading_messages:
+                await self.send(text_data=json.dumps({
+                    'progress': message['progress'],
+                    'subject': message['subject'],
+                    'send_date': message['send_date'],
+                    'received_date': message['received_date'],
+                    'description': message['description'],
+                    'status': 'Fetching'
+                }))
+                if message['progress'] >= 100:
+                    reading_messages = False
+            await self.send(text_data=json.dumps({
+                'progress': message['progress'],
+                'subject': message['subject'],
+                'status': 'Processing'
+            }))
+
+        await self.send(text_data=json.dumps({
+            'status': 'Completed',
+        }))
 
     async def receive(self, text_data):
         data = json.loads(text_data)

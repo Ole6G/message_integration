@@ -3,7 +3,7 @@ import email
 from email.parser import BytesParser
 from email.policy import default
 import datetime
-from models import UserEmail, Message
+from .models import UserEmail, Message
 
 
 async def fetch_emails():
