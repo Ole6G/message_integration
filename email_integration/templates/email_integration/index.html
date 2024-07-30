@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Integration</title>
+    <style>
+        /* Add some basic styling */
+        #progress-bar {
+            width: 100%;
+            background-color: #e0e0df;
+            margin-top: 20px;
+        }
+        
+        #progress-bar-fill {
+            height: 24px;
+            width: 0;
+            background-color: #76c7c0;
+            text-align: center;
+            line-height: 24px;
+            color: white;
+        }
+        
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <button id="start-fetching">Start Fetching Emails</button>
+
+    <div id="progress-bar">
+        <div id="progress-bar-fill">0%</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Date Sent</th>
+                <th>Date Received</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody id="email-list">
+            <!-- Rows will be added dynamically -->
+        </tbody>
+    </table>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const socket = new WebSocket('ws://' + window.location.host + '/ws/email/');
+
+            socket.onmessage = function (event) {
+                const message = JSON.parse(event.data);
+                
+                if (message.status === 'Fetching Started') {
+                    console.log('Fetching Started');
+                } else if (message.status === 'Completed') {
+                    console.log('Fetching Completed');
+                } else {
+                    $('#progress-bar-fill').css('width', message.progress + '%').text(message.progress.toFixed(2) + '%');
+                    
+                    $('#email-list').append(
+                        <tr>
+                            <td>${message.subject}</td>
+                            <td>${message.date_sent}</td>
+                            <td>${message.date_received}</td>
+                            <td>${message.description}</td>
+                        </tr>
+                    );
+                }
+            };
+
+            $('#start-fetching').click(function () {
+                socket.send(JSON.stringify({
+                    'action': 'start_fetching'
+                }));
+            });
+        });
+    </script>
+</body>
+</html>
